@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,10 +85,7 @@ class ZhipuService {
 
   static Future<bool> testKey(String apiKey) async {
     try {
-      await chat(
-        apiKey: apiKey,
-        messages: [{'role': 'user', 'content': 'Hi'}],
-      );
+      await chat(apiKey: apiKey, messages: [{'role': 'user', 'content': 'Hi'}]);
       return true;
     } catch (_) {
       return false;
@@ -132,7 +131,7 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => Navigator.push(
-              context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+                context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
           ),
         ],
       ),
@@ -141,75 +140,45 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // API Key 提示
             if (state.apiKey == null || state.apiKey!.isEmpty)
               _buildApiKeyBanner(context),
-
-            // 统计卡片
             _buildStatsRow(state),
             const SizedBox(height: 20),
-
             const Text('学习功能', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-
-            // 功能卡片
-            _buildFeatureCard(
-              context,
-              icon: Icons.chat_bubble_outline,
-              title: '情景对话',
-              subtitle: '与AI进行英语对话练习',
-              color: const Color(0xFF4CAF50),
-              progress: 0.9,
+            _buildFeatureCard(context,
+              icon: Icons.chat_bubble_outline, title: '情景对话',
+              subtitle: '一问一答英语练习，支持语音回复',
+              color: const Color(0xFF4CAF50), progress: 0.9,
               onTap: state.apiKey?.isNotEmpty == true
                   ? () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DialogScreen()))
-                  : () => _showNeedApiKey(context),
-            ),
+                  : () => _showNeedApiKey(context)),
             const SizedBox(height: 12),
-            _buildFeatureCard(
-              context,
-              icon: Icons.hearing,
-              title: '听力训练',
+            _buildFeatureCard(context,
+              icon: Icons.hearing, title: '听力训练',
               subtitle: '听AI朗读，训练英语听力',
-              color: const Color(0xFF9C27B0),
-              progress: 0.8,
-              badge: '开发中',
-              onTap: () => _showComingSoon(context, '听力训练'),
-            ),
+              color: const Color(0xFF9C27B0), progress: 0.8, badge: '开发中',
+              onTap: () => _showComingSoon(context, '听力训练')),
             const SizedBox(height: 12),
-            _buildFeatureCard(
-              context,
-              icon: Icons.mic,
-              title: '口语练习',
+            _buildFeatureCard(context,
+              icon: Icons.mic, title: '口语练习',
               subtitle: '开口说英语，AI纠正发音',
-              color: const Color(0xFFFF9800),
-              progress: 0.7,
-              badge: '开发中',
-              onTap: () => _showComingSoon(context, '口语练习'),
-            ),
+              color: const Color(0xFFFF9800), progress: 0.7, badge: '开发中',
+              onTap: () => _showComingSoon(context, '口语练习')),
             const SizedBox(height: 20),
             const Text('工具', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            _buildFeatureCard(
-              context,
-              icon: Icons.lock,
-              title: '监狱模式',
+            _buildFeatureCard(context,
+              icon: Icons.lock, title: '监狱模式',
               subtitle: '完成学习目标才能解锁手机',
-              color: const Color(0xFFF44336),
-              progress: 0.6,
-              badge: '开发中',
-              onTap: () => _showComingSoon(context, '监狱模式'),
-            ),
+              color: const Color(0xFFF44336), progress: 0.6, badge: '开发中',
+              onTap: () => _showComingSoon(context, '监狱模式')),
             const SizedBox(height: 12),
-            _buildFeatureCard(
-              context,
-              icon: Icons.bar_chart,
-              title: '学习统计',
+            _buildFeatureCard(context,
+              icon: Icons.bar_chart, title: '学习统计',
               subtitle: '查看学习进度和数据',
-              color: const Color(0xFF2196F3),
-              progress: 1.0,
-              onTap: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const StatsScreen())),
-            ),
+              color: const Color(0xFF2196F3), progress: 1.0,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatsScreen()))),
           ],
         ),
       ),
@@ -231,8 +200,7 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(width: 8),
           const Expanded(child: Text('请先设置智谱AI API Key才能使用对话功能')),
           TextButton(
-            onPressed: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen())),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
             child: const Text('去设置'),
           ),
         ],
@@ -259,7 +227,7 @@ class HomeScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+          boxShadow: [const BoxShadow(color: Colors.black12, blurRadius: 4)],
         ),
         child: Column(
           children: [
@@ -274,13 +242,8 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildFeatureCard(BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required double progress,
-    required VoidCallback onTap,
-    String? badge,
+    required IconData icon, required String title, required String subtitle,
+    required Color color, required double progress, required VoidCallback onTap, String? badge,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -289,7 +252,7 @@ class HomeScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: const Offset(0, 2))],
+          boxShadow: [const BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2))],
         ),
         child: Row(
           children: [
@@ -310,10 +273,7 @@ class HomeScreen extends StatelessWidget {
                         const SizedBox(width: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(8)),
                           child: Text(badge, style: TextStyle(fontSize: 10, color: Colors.orange.shade800)),
                         ),
                       ],
@@ -325,8 +285,7 @@ class HomeScreen extends StatelessWidget {
                   LinearProgressIndicator(
                     value: progress,
                     backgroundColor: Colors.grey.shade200,
-                    color: color,
-                    minHeight: 4,
+                    color: color, minHeight: 4,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ],
@@ -340,15 +299,11 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _showNeedApiKey(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('请先在设置中填写智谱AI API Key'),
-        action: SnackBarAction(
-          label: '去设置',
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: const Text('请先在设置中填写智谱AI API Key'),
+      action: SnackBarAction(label: '去设置',
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()))),
+    ));
   }
 
   void _showComingSoon(BuildContext context, String feature) {
@@ -367,7 +322,6 @@ class HomeScreen extends StatelessWidget {
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
-
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -386,11 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _save() async {
     final apiKey = _controller.text.trim();
-    if (apiKey.isEmpty) {
-      _snack('请输入API Key', isError: true);
-      return;
-    }
-
+    if (apiKey.isEmpty) { _snack('请输入API Key', isError: true); return; }
     setState(() => _isTesting = true);
     try {
       final ok = await ZhipuService.testKey(apiKey);
@@ -419,11 +369,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置'),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('设置'), backgroundColor: const Color(0xFF2196F3), foregroundColor: Colors.white),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -456,14 +402,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _isTesting
-                    ? const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
-                          SizedBox(width: 10),
-                          Text('正在验证...'),
-                        ],
-                      )
+                    ? const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                        SizedBox(width: 10), Text('正在验证...'),
+                      ])
                     : const Text('保存并验证', style: TextStyle(fontSize: 16)),
               ),
             ),
@@ -476,80 +418,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  void dispose() { _controller.dispose(); super.dispose(); }
 }
 
-// ─── Dialog Screen ────────────────────────────────────────────────────────────
+// ─── Dialog Screen（一问一答 + 语音输入）────────────────────────────────────────
 
 class DialogScreen extends StatefulWidget {
   const DialogScreen({Key? key}) : super(key: key);
-
   @override
   State<DialogScreen> createState() => _DialogScreenState();
 }
 
-class _DialogScreenState extends State<DialogScreen> {
+class _DialogScreenState extends State<DialogScreen> with SingleTickerProviderStateMixin {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  final SpeechToText _speech = SpeechToText();
+
   final List<_Message> _messages = [];
   bool _isLoading = false;
+  bool _isListening = false;
+  bool _speechAvailable = false;
+  String _liveText = '';          // 实时识别文字
+  late AnimationController _pulseController;
+
+  // 一问一答：等待用户回答状态
+  bool _waitingForAnswer = false;
 
   static const _scenarios = [
-    ('咖啡厅点单', '你是咖啡厅服务员，用英文接待顾客点单，保持友好自然，偶尔纠正用户英语错误并给出正确用法。'),
-    ('面试对话', '你是HR面试官，用英文进行求职面试，问一些常见问题，保持专业，纠正用户英语表达。'),
-    ('问路指路', '你是路人，用英文帮助问路，场景在英语国家，自然对话，纠正用户英语错误。'),
-    ('购物还价', '你是商店店员，用英文接待顾客，涉及商品询问和价格，保持真实自然的购物场景。'),
+    ('☕ 咖啡厅点单', 'You are a barista at a cozy English café. Have a one-question-at-a-time conversation with the customer. Ask ONE question, wait for their answer, then respond naturally and ask the next question. Occasionally correct their English mistakes in brackets like [Correction: ...]. Keep it natural and friendly.'),
+    ('💼 求职面试', 'You are an English-speaking HR interviewer. Conduct a job interview one question at a time. Ask ONE interview question, wait for the answer, evaluate it briefly, then ask the next question. Correct major English mistakes in brackets like [Correction: ...].'),
+    ('🗺️ 问路指路', 'You are a local in an English-speaking city. Help a tourist find their way. Ask or answer ONE thing at a time. Correct their English mistakes in brackets like [Correction: ...]. Keep directions simple and clear.'),
+    ('🛍️ 购物还价', 'You are a shop owner in an English-speaking market. Have a one-exchange-at-a-time shopping conversation. Respond to ONE thing at a time. Correct English mistakes in brackets like [Correction: ...].'),
   ];
 
-  String _currentScenario = _scenarios[0].$1;
-  String _currentPrompt = _scenarios[0].$2;
-  bool _scenarioStarted = false;
+  int _scenarioIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800))..repeat(reverse: true);
+    _initSpeech();
     _startScenario();
+  }
+
+  Future<void> _initSpeech() async {
+    final status = await Permission.microphone.request();
+    if (status.isGranted) {
+      _speechAvailable = await _speech.initialize(
+        onError: (e) => setState(() => _isListening = false),
+        onStatus: (s) { if (s == 'done' || s == 'notListening') _stopListening(); },
+      );
+      setState(() {});
+    }
   }
 
   Future<void> _startScenario() async {
     final apiKey = context.read<AppState>().apiKey!;
-    setState(() {
-      _messages.clear();
-      _isLoading = true;
-      _scenarioStarted = false;
-    });
+    setState(() { _messages.clear(); _isLoading = true; _waitingForAnswer = false; });
 
     try {
       final reply = await ZhipuService.chat(
         apiKey: apiKey,
         messages: [
-          {'role': 'system', 'content': _currentPrompt + '用英文开始对话，中文注释关键词。'},
-          {'role': 'user', 'content': 'Start the conversation.'},
+          {'role': 'system', 'content': _scenarios[_scenarioIndex].$2},
+          {'role': 'user', 'content': 'Start the conversation by greeting me and asking your first question.'},
         ],
       );
       setState(() {
         _messages.add(_Message(text: reply, isUser: false));
-        _scenarioStarted = true;
+        _waitingForAnswer = true;
       });
       _scrollToBottom();
     } catch (e) {
-      setState(() => _messages.add(_Message(text: '⚠️ 连接失败: $e\n请检查网络和API Key', isUser: false, isError: true)));
+      setState(() => _messages.add(_Message(text: '⚠️ 连接失败: $e', isUser: false, isError: true)));
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _send() async {
-    final text = _controller.text.trim();
+  Future<void> _send([String? overrideText]) async {
+    final text = (overrideText ?? _controller.text).trim();
     if (text.isEmpty || _isLoading) return;
 
     _controller.clear();
     setState(() {
       _messages.add(_Message(text: text, isUser: true));
       _isLoading = true;
+      _waitingForAnswer = false;
+      _liveText = '';
     });
     _scrollToBottom();
 
@@ -563,11 +519,14 @@ class _DialogScreenState extends State<DialogScreen> {
       final reply = await ZhipuService.chat(
         apiKey: apiKey,
         messages: [
-          {'role': 'system', 'content': _currentPrompt + '如果用户英语有错误，先自然回应，再用括号【纠正：正确用法】指出。'},
+          {'role': 'system', 'content': _scenarios[_scenarioIndex].$2},
           ...history,
         ],
       );
-      setState(() => _messages.add(_Message(text: reply, isUser: false)));
+      setState(() {
+        _messages.add(_Message(text: reply, isUser: false));
+        _waitingForAnswer = true;
+      });
       await context.read<AppState>().recordDialog();
     } catch (e) {
       setState(() => _messages.add(_Message(text: '⚠️ 发送失败: $e', isUser: false, isError: true)));
@@ -575,6 +534,43 @@ class _DialogScreenState extends State<DialogScreen> {
       setState(() => _isLoading = false);
       _scrollToBottom();
     }
+  }
+
+  Future<void> _toggleListening() async {
+    if (_isListening) {
+      _stopListening();
+    } else {
+      await _startListening();
+    }
+  }
+
+  Future<void> _startListening() async {
+    if (!_speechAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('麦克风权限未开启，请在系统设置中允许')));
+      return;
+    }
+    setState(() { _isListening = true; _liveText = ''; });
+    await _speech.listen(
+      onResult: (result) {
+        setState(() {
+          _liveText = result.recognizedWords;
+          if (result.finalResult && _liveText.isNotEmpty) {
+            _stopListening();
+            _send(_liveText);
+          }
+        });
+      },
+      listenFor: const Duration(seconds: 30),
+      pauseFor: const Duration(seconds: 3),
+      localeId: 'en_US',
+      listenMode: ListenMode.confirmation,
+    );
+  }
+
+  void _stopListening() {
+    _speech.stop();
+    setState(() { _isListening = false; });
   }
 
   void _scrollToBottom() {
@@ -592,24 +588,17 @@ class _DialogScreenState extends State<DialogScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF0F4F8),
       appBar: AppBar(
-        title: Text(_currentScenario),
+        title: Text(_scenarios[_scenarioIndex].$1),
         backgroundColor: const Color(0xFF4CAF50),
         foregroundColor: Colors.white,
         actions: [
           PopupMenuButton<int>(
             icon: const Icon(Icons.swap_horiz),
             tooltip: '切换场景',
-            onSelected: (i) {
-              setState(() {
-                _currentScenario = _scenarios[i].$1;
-                _currentPrompt = _scenarios[i].$2;
-              });
-              _startScenario();
-            },
-            itemBuilder: (_) => _scenarios
-                .asMap()
-                .entries
+            onSelected: (i) { setState(() => _scenarioIndex = i); _startScenario(); },
+            itemBuilder: (_) => _scenarios.asMap().entries
                 .map((e) => PopupMenuItem(value: e.key, child: Text(e.value.$1)))
                 .toList(),
           ),
@@ -617,19 +606,23 @@ class _DialogScreenState extends State<DialogScreen> {
       ),
       body: Column(
         children: [
-          // 场景说明
+          // 场景提示条
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             color: const Color(0xFFE8F5E9),
-            child: Text('场景：$_currentScenario  |  右上角可切换场景',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF388E3C))),
+            child: Text(
+              _waitingForAnswer ? '💬 轮到你回答了！可以打字或按麦克风说话' : '⏳ AI思考中...',
+              style: TextStyle(fontSize: 12, color: _waitingForAnswer ? const Color(0xFF2E7D32) : Colors.grey),
+              textAlign: TextAlign.center,
+            ),
           ),
+
           // 消息列表
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
               itemCount: _messages.length + (_isLoading ? 1 : 0),
               itemBuilder: (_, i) {
                 if (i == _messages.length) return _buildTyping();
@@ -637,36 +630,101 @@ class _DialogScreenState extends State<DialogScreen> {
               },
             ),
           ),
-          // 输入框
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, -2))],
+
+          // 实时语音识别显示
+          if (_isListening && _liveText.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.mic, color: Colors.green, size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(_liveText, style: const TextStyle(color: Colors.black87))),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: '用英语回复...',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+
+          // 输入区
+          _buildInputBar(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, -2))],
+      ),
+      child: Row(
+        children: [
+          // 文字输入
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              decoration: InputDecoration(
+                hintText: _isListening ? '正在聆听...' : '用英语回答...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                filled: true,
+                fillColor: const Color(0xFFF5F5F5),
+              ),
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _send(),
+              enabled: !_isLoading && !_isListening,
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // 语音按钮
+          AnimatedBuilder(
+            animation: _pulseController,
+            builder: (_, child) {
+              final scale = _isListening ? (1.0 + _pulseController.value * 0.15) : 1.0;
+              return Transform.scale(
+                scale: scale,
+                child: GestureDetector(
+                  onTap: !_isLoading ? _toggleListening : null,
+                  child: Container(
+                    width: 48, height: 48,
+                    decoration: BoxDecoration(
+                      color: _isListening ? Colors.red : const Color(0xFF4CAF50),
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(
+                        color: (_isListening ? Colors.red : const Color(0xFF4CAF50)).withOpacity(0.4),
+                        blurRadius: _isListening ? 12 : 4,
+                      )],
                     ),
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _send(),
-                    enabled: !_isLoading,
+                    child: Icon(
+                      _isListening ? Icons.stop : Icons.mic,
+                      color: Colors.white, size: 24,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _isLoading ? null : _send,
-                  icon: const Icon(Icons.send),
-                  color: const Color(0xFF4CAF50),
-                  iconSize: 28,
-                ),
-              ],
+              );
+            },
+          ),
+
+          const SizedBox(width: 8),
+
+          // 发送按钮
+          GestureDetector(
+            onTap: (!_isLoading && !_isListening) ? _send : null,
+            child: Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(
+                color: (!_isLoading && !_isListening) ? const Color(0xFF2196F3) : Colors.grey.shade300,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.send, color: Colors.white, size: 22),
             ),
           ),
         ],
@@ -678,23 +736,29 @@ class _DialogScreenState extends State<DialogScreen> {
     return Align(
       alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: EdgeInsets.only(
+          bottom: 10,
+          left: msg.isUser ? 48 : 0,
+          right: msg.isUser ? 0 : 48,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
         decoration: BoxDecoration(
           color: msg.isError
               ? Colors.red.shade50
               : msg.isUser
                   ? const Color(0xFF4CAF50)
                   : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+          borderRadius: BorderRadius.circular(18).copyWith(
+            bottomRight: msg.isUser ? const Radius.circular(4) : null,
+            bottomLeft: msg.isUser ? null : const Radius.circular(4),
+          ),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
         ),
         child: Text(
           msg.text,
           style: TextStyle(
             color: msg.isUser ? Colors.white : Colors.black87,
-            fontSize: 15,
+            fontSize: 15, height: 1.4,
           ),
         ),
       ),
@@ -706,15 +770,18 @@ class _DialogScreenState extends State<DialogScreen> {
       alignment: Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18).copyWith(bottomLeft: const Radius.circular(4)),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(width: 6, height: 6, child: CircularProgressIndicator(strokeWidth: 2)),
+            SizedBox(width: 8, height: 8, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF4CAF50))),
             SizedBox(width: 8),
-            Text('AI正在回复...', style: TextStyle(color: Colors.grey)),
+            Text('AI正在思考...', style: TextStyle(color: Colors.grey, fontSize: 13)),
           ],
         ),
       ),
@@ -725,6 +792,8 @@ class _DialogScreenState extends State<DialogScreen> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _pulseController.dispose();
+    _speech.stop();
     super.dispose();
   }
 }
@@ -745,11 +814,7 @@ class StatsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('学习统计'),
-        backgroundColor: const Color(0xFF2196F3),
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('学习统计'), backgroundColor: const Color(0xFF2196F3), foregroundColor: Colors.white),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -775,7 +840,7 @@ class StatsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
       ),
       child: Row(
         children: [
