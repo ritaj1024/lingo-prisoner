@@ -1,11 +1,14 @@
 package com.lingoprisoner.lingo_prisoner
 
 import android.app.*
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +26,7 @@ class PrisonModeMonitorService : Service() {
     private var windowManager: WindowManager? = null
     private var blockOverlay: View? = null
     private var allowedApps = arrayOf<String>()
+    private val handler = Handler(Looper.getMainLooper())
     
     companion object {
         private const val NOTIFICATION_ID = 1001
@@ -35,7 +39,6 @@ class PrisonModeMonitorService : Service() {
             val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
             val currentTime = System.currentTimeMillis()
             
-            // 查询最近1分钟的使用情况
             val stats = usageStatsManager.queryUsageStats(
                 UsageStatsManager.INTERVAL_DAILY,
                 currentTime - 60 * 1000,
@@ -44,7 +47,6 @@ class PrisonModeMonitorService : Service() {
             
             if (stats.isNullOrEmpty()) return null
             
-            // 找出最近使用的应用
             return stats.maxByOrNull { it.lastTimeUsed }?.packageName
         }
     }
@@ -53,7 +55,6 @@ class PrisonModeMonitorService : Service() {
         super.onCreate()
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification())
-        
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
     }
     
@@ -61,10 +62,7 @@ class PrisonModeMonitorService : Service() {
         intent?.getStringArrayExtra("allowedApps")?.let {
             allowedApps = it
         }
-        
-        // 开始监控
         startMonitoring()
-        
         return START_STICKY
     }
     
@@ -81,23 +79,20 @@ class PrisonModeMonitorService : Service() {
      * 开始监控
      */
     private fun startMonitoring() {
-        // 启动应用使用监控任务
         val monitorTask = object : Runnable {
             override fun run() {
                 checkAndBlockApps()
-                // 每秒检查一次
-                windowManager?.postDelayed(this, 1000)
+                handler.postDelayed(this, 1000)
             }
         }
-        
-        windowManager?.post(monitorTask)
+        handler.post(monitorTask)
     }
     
     /**
      * 停止监控
      */
     private fun stopMonitoring() {
-        // 移除阻止覆盖层
+        handler.removeCallbacksAndMessages(null)
         blockOverlay?.let {
             windowManager?.removeView(it)
             blockOverlay = null
@@ -110,11 +105,9 @@ class PrisonModeMonitorService : Service() {
     private fun checkAndBlockApps() {
         val currentApp = getCurrentForegroundApp(this) ?: return
         
-        // 跳过本应用和白名单应用
         if (currentApp == packageName || allowedApps.contains(currentApp)) {
-            // 移除阻止覆盖层
             blockOverlay?.let {
-                if (it.isAttachedToWindow()) {
+                if (it.isAttachedToWindow) {
                     windowManager?.removeView(it)
                 }
                 blockOverlay = null
@@ -122,8 +115,7 @@ class PrisonModeMonitorService : Service() {
             return
         }
         
-        // 如果当前应用不在白名单中，显示阻止界面
-        if (blockOverlay == null || !blockOverlay!!.isAttachedToWindow()) {
+        if (blockOverlay == null || blockOverlay?.isAttachedToWindow == false) {
             showBlockOverlay()
         }
     }
@@ -147,24 +139,15 @@ class PrisonModeMonitorService : Service() {
         
         layoutParams.gravity = Gravity.CENTER
         
-        // 创建阻止界面
-        blockOverlay = LayoutInflater.from(this).inflate(
-            R.layout.prison_block_layout,
-            null
-        )
+        blockOverlay = LayoutInflater.from(this).inflate(R.layout.prison_block_layout, null)
         
-        // 设置返回应用按钮
         blockOverlay?.findViewById<Button>(R.id.btn_back_to_app)?.setOnClickListener {
-            // 返回到本应用
-            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_LAUNCHER)
-                packageName = this@PrisonModeMonitorService.packageName
+            val homeIntent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
-            homeIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             startActivity(homeIntent)
         }
         
-        // 显示允许的应用列表
         val allowedAppsText = blockOverlay?.findViewById<TextView>(R.id.tv_allowed_apps)
         allowedAppsText?.text = allowedApps.joinToString("\n") { pkg ->
             when (pkg) {
@@ -191,7 +174,6 @@ class PrisonModeMonitorService : Service() {
             ).apply {
                 description = "监控应用使用，确保学习任务完成"
             }
-            
             val notificationManager = getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
         }
@@ -203,10 +185,7 @@ class PrisonModeMonitorService : Service() {
     private fun createNotification(): Notification {
         val intent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE
+            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
         )
         
         return NotificationCompat.Builder(this, CHANNEL_ID)
