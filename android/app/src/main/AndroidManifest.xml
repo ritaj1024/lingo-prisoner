@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.lingoprisoner.lingo_prisoner">
+
+    <!-- 监狱模式需要的权限 -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <application
+        android:label="语言囚徒"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+        
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <!-- 监狱模式服务 -->
+        <service
+            android:name=".PrisonModeService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- 监狱模式广播接收器 -->
+        <receiver
+            android:name=".PrisonModeReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="com.lingoprisoner.ACTIVATE_PRISON" />
+                <action android:name="com.lingoprisoner.DEACTIVATE_PRISON" />
+            </intent-filter>
+        </receiver>
+
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+
+    <!-- 请求权限以实现监狱模式 -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+</manifest>
