@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'main.dart' show AppState, ZhipuService;
+import 'app_state.dart';
 
 class TranslationScreen extends StatefulWidget {
   const TranslationScreen({Key? key}) : super(key: key);
@@ -31,11 +31,14 @@ class _TranslationScreenState extends State<TranslationScreen>
   final List<_TransRecord> _history = [];
   late AnimationController _pulse;
 
+  // 系统提示：自动检测语言并翻译
   static const _sysPrompt =
-      'You are a professional translation engine. Detect the language of the input text. '
-      'If it is Chinese, translate to English. If it is any other language (English, Japanese, Korean, French, Spanish, etc.), translate to Chinese. '
-      'Return ONLY a JSON object with no markdown: '
-      '{"detected_lang":"language name in Chinese (e.g. Chinese=中文, English=英文, Japanese=日文)","target_lang":"target language in Chinese (中文 or 英文)","translation":"translated text"}';
+      'You are a professional translation engine. '
+      'Detect the language of the input. '
+      'If Chinese -> translate to English. '
+      'If any other language (English, Japanese, Korean, French, Spanish, etc.) -> translate to Chinese. '
+      'Return ONLY valid JSON, no markdown, no explanation: '
+      '{"detected_lang":"<语言名称，用中文，如：中文/英文/日文/韩文/法文>","target_lang":"<中文 or 英文>","translation":"<translated text>"}';
 
   @override
   void initState() {
@@ -137,7 +140,7 @@ class _TranslationScreenState extends State<TranslationScreen>
         if (_history.length > 20) _history.removeLast();
       });
     } catch (e) {
-      setState(() => _translated = '⚠️ 翻译失败: \$e');
+      setState(() => _translated = '⚠️ 翻译失败: $e');
     } finally {
       setState(() => _translating = false);
     }
@@ -162,8 +165,7 @@ class _TranslationScreenState extends State<TranslationScreen>
   void _copy(String text) {
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('已复制到剪贴板'),
-        duration: Duration(seconds: 1)));
+        content: Text('已复制到剪贴板'), duration: Duration(seconds: 1)));
   }
 
   @override
@@ -184,8 +186,7 @@ class _TranslationScreenState extends State<TranslationScreen>
         body: Column(children: [
           Container(
             width: double.infinity,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: const Color(0xFFB2EBF2),
             child: const Text(
                 '自动检测语言 · 中文→英文 · 其他语言→中文',
@@ -206,18 +207,15 @@ class _TranslationScreenState extends State<TranslationScreen>
                       child: Column(children: [
                         CircularProgressIndicator(color: Color(0xFF00BCD4)),
                         SizedBox(height: 8),
-                        Text('正在翻译...',
-                            style: TextStyle(color: Colors.grey)),
+                        Text('正在翻译...', style: TextStyle(color: Colors.grey)),
                       ])),
-                if (_translated.isNotEmpty && !_translating)
-                  _translatedCard(),
+                if (_translated.isNotEmpty && !_translating) _translatedCard(),
                 const SizedBox(height: 24),
                 const Divider(),
                 const SizedBox(height: 8),
                 const Align(
                     alignment: Alignment.centerLeft,
-                    child: Text(
-                        '或者直接输入文字翻译',
+                    child: Text('或者直接输入文字翻译',
                         style: TextStyle(color: Colors.grey, fontSize: 13))),
                 const SizedBox(height: 10),
                 _textInputArea(),
@@ -255,8 +253,8 @@ class _TranslationScreenState extends State<TranslationScreen>
                         color: Colors.white, size: 44),
                     const SizedBox(height: 4),
                     Text(_listening ? '停止' : '说话',
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 12)),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 12)),
                   ]),
             ),
           ),
@@ -270,8 +268,7 @@ class _TranslationScreenState extends State<TranslationScreen>
         decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border:
-                Border.all(color: const Color(0xFF00BCD4), width: 2)),
+            border: Border.all(color: const Color(0xFF00BCD4), width: 2)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Row(children: [
             Icon(Icons.mic, color: Color(0xFF00BCD4), size: 16),
@@ -294,19 +291,14 @@ class _TranslationScreenState extends State<TranslationScreen>
         decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 6)
-            ]),
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)]),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Row(children: [
-              const Icon(Icons.record_voice_over,
-                  size: 16, color: Colors.grey),
+              const Icon(Icons.record_voice_over, size: 16, color: Colors.grey),
               const SizedBox(width: 6),
               Text(
-                  _detectedLang.isNotEmpty
-                      ? '原文（\$_detectedLang）'
-                      : '原文',
+                  _detectedLang.isNotEmpty ? '原文（$_detectedLang）' : '原文',
                   style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 12,
@@ -321,9 +313,7 @@ class _TranslationScreenState extends State<TranslationScreen>
               const SizedBox(width: 8),
               IconButton(
                   icon: Icon(
-                      _playing
-                          ? Icons.volume_up
-                          : Icons.play_circle_outline,
+                      _playing ? Icons.volume_up : Icons.play_circle_outline,
                       size: 18,
                       color: const Color(0xFF00BCD4)),
                   onPressed:
@@ -333,8 +323,7 @@ class _TranslationScreenState extends State<TranslationScreen>
             ]),
           ]),
           const SizedBox(height: 8),
-          Text(_original,
-              style: const TextStyle(fontSize: 16, height: 1.5)),
+          Text(_original, style: const TextStyle(fontSize: 16, height: 1.5)),
         ]),
       );
 
@@ -349,10 +338,7 @@ class _TranslationScreenState extends State<TranslationScreen>
               end: Alignment.bottomRight),
           borderRadius: BorderRadius.circular(16),
           boxShadow: const [
-            BoxShadow(
-                color: Colors.black26,
-                blurRadius: 8,
-                offset: Offset(0, 4))
+            BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))
           ],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -360,8 +346,7 @@ class _TranslationScreenState extends State<TranslationScreen>
             Row(children: [
               const Icon(Icons.translate, size: 16, color: Colors.white70),
               const SizedBox(width: 6),
-              Text(
-                  '翻译结果（\$_targetLang）',
+              Text('翻译结果（$_targetLang）',
                   style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -369,22 +354,18 @@ class _TranslationScreenState extends State<TranslationScreen>
             ]),
             Row(children: [
               IconButton(
-                  icon: const Icon(Icons.copy,
-                      size: 18, color: Colors.white),
+                  icon: const Icon(Icons.copy, size: 18, color: Colors.white),
                   onPressed: () => _copy(_translated),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints()),
               const SizedBox(width: 8),
               IconButton(
                   icon: Icon(
-                      _playing
-                          ? Icons.volume_up
-                          : Icons.play_circle_outline,
+                      _playing ? Icons.volume_up : Icons.play_circle_outline,
                       size: 18,
                       color: Colors.white),
-                  onPressed: _playing
-                      ? null
-                      : () => _speak(_translated, _targetLang),
+                  onPressed:
+                      _playing ? null : () => _speak(_translated, _targetLang),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints()),
             ]),
@@ -407,8 +388,8 @@ class _TranslationScreenState extends State<TranslationScreen>
               controller: _textCtrl,
               decoration: InputDecoration(
                 hintText: '输入任意语言文字进行翻译...',
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.all(14),
@@ -452,8 +433,8 @@ class _TranslationScreenState extends State<TranslationScreen>
           const Padding(
               padding: EdgeInsets.all(16),
               child: Text('翻译历史',
-                  style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold))),
+                  style:
+                      TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
           Expanded(
             child: ListView.separated(
               controller: ctrl,
@@ -463,8 +444,7 @@ class _TranslationScreenState extends State<TranslationScreen>
               itemBuilder: (_, i) {
                 final r = _history[i];
                 return ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   title: Text(r.original,
                       style: const TextStyle(fontSize: 14),
                       maxLines: 2,
@@ -474,10 +454,9 @@ class _TranslationScreenState extends State<TranslationScreen>
                           color: Color(0xFF00BCD4), fontSize: 13),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis),
-                  trailing: Text(
-                      '\${r.detectedLang}→\${r.targetLang}',
-                      style: const TextStyle(
-                          fontSize: 10, color: Colors.grey)),
+                  trailing: Text('${r.detectedLang}→${r.targetLang}',
+                      style:
+                          const TextStyle(fontSize: 10, color: Colors.grey)),
                   onTap: () {
                     Navigator.pop(context);
                     setState(() {
